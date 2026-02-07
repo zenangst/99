@@ -127,6 +127,10 @@ end
 --- @param prompt string
 function RequestContext:save_prompt(prompt)
   local prompt_file = self.tmp_file .. "-prompt"
+
+  local dir = vim.fs.dirname(prompt_file)
+  vim.fn.mkdir(dir, "p")
+
   local file = io.open(prompt_file, "w")
   if file then
     file:write(prompt)
