@@ -129,7 +129,10 @@ function RequestContext:save_prompt(prompt)
   local prompt_file = self.tmp_file .. "-prompt"
 
   local dir = vim.fs.dirname(prompt_file)
-  vim.fn.mkdir(dir, "p")
+
+  if dir and not vim.uv.fs_stat(dir) then
+    pcall(vim.uv.fs_mkdir, dir, 493)
+  end
 
   local file = io.open(prompt_file, "w")
   if file then
