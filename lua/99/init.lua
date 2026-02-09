@@ -515,6 +515,16 @@ function _99.set_model(model)
   return _99
 end
 
+--- @return string
+function _99.get_model()
+  return _99_state.model
+end
+
+--- @return _99.Providers.BaseProvider
+function _99.get_provider()
+  return _99_state.provider_override or Providers.OpenCodeProvider
+end
+
 function _99.__debug()
   Logger:configure({
     path = nil,
