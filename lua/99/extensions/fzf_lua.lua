@@ -7,19 +7,15 @@ local M = {}
 --- @param current string
 --- @return string[]
 local function promote_current(list, current)
-  local result = {}
-  local rest = {}
-  for _, item in ipairs(list) do
+  local out = { unpack(list) }
+  for i, item in ipairs(out) do
     if item == current then
-      table.insert(result, 1, item)
-    else
-      table.insert(rest, item)
+      table.remove(out, i)
+      table.insert(out, 1, current)
+      break
     end
   end
-  for _, item in ipairs(rest) do
-    table.insert(result, item)
-  end
-  return result
+  return out
 end
 
 --- @param provider _99.Providers.BaseProvider?
