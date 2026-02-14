@@ -1,5 +1,5 @@
---- @alias _99.Request.State "ready" | "calling-model" | "parsing-result" | "updating-file" | "cancelled"
 --- @alias _99.Request.ResponseState "failed" | "success" | "cancelled"
+--- @alias _99.Request.State "ready" | "requesting" | _99.Request.ResponseState
 
 local Providers = require("99.providers")
 
@@ -47,15 +47,21 @@ function Request:_set_process(proc)
 end
 
 function Request:cancel()
+  if self.state == "finished" then
+    return
+  end
+
   self.logger:debug("cancel")
   self.state = "cancelled"
+  local proc = self._proc
   ---@diagnostic disable-next-line: undefined-field
-  if self._proc and self._proc.pid then
+  if proc and proc.pid then
+    self._proc = nil
     pcall(function()
       local sigterm = (vim.uv and vim.uv.constants and vim.uv.constants.SIGTERM)
         or 15
       ---@diagnostic disable-next-line: undefined-field
-      self._proc:kill(sigterm)
+      proc:kill(sigterm)
     end)
   end
 end
@@ -73,6 +79,12 @@ end
 
 --- @param observer _99.Providers.Observer?
 function Request:start(observer)
+  self.logger:assert(
+    self.state == "ready",
+    "request is not in state ready when attempting to start a request"
+  )
+  self.state = "requesting"
+
   self.context._99:track_request(self.context)
   self.context:finalize()
   for _, content in ipairs(self.context.ai_context) do

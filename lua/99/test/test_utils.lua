@@ -1,3 +1,4 @@
+local BaseProvider = require("99.providers").BaseProvider
 local Levels = require("99.logger.level")
 local M = {}
 
@@ -22,8 +23,7 @@ M.created_files = {}
 
 --- @class _99.test.Provider : _99.Providers.BaseProvider
 --- @field request _99.test.ProviderRequest?
-local TestProvider = {}
-TestProvider.__index = TestProvider
+local TestProvider = setmetatable({}, { __index = BaseProvider })
 
 function TestProvider.new()
   return setmetatable({}, TestProvider)
@@ -109,7 +109,7 @@ end
 --- @param col number
 --- @param lang string?
 --- @return _99.test.Provider, number
-function M.fif_setup(content, row, col, lang)
+function M.test_setup(content, row, col, lang)
   assert(lang, "lang must be provided")
   local provider = M.TestProvider.new()
   require("99").setup({

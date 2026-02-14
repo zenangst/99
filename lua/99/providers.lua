@@ -62,9 +62,15 @@ function BaseProvider:make_request(query, request, observer)
   logger:debug("make_request", "tmp_file", request.context.tmp_file)
 
   observer = observer or DevNullObserver
-  local once_complete = once(function(status, text)
-    observer.on_complete(status, text)
-  end)
+  local once_complete = once(
+    --- @param status "success" | "failed" | "cancelled"
+    ---@param text string
+    function(status, text)
+      print("setting status", status)
+      request.state = status
+      observer.on_complete(status, text)
+    end
+  )
 
   local command = self:_build_command(query, request)
   logger:debug("make_request", "command", command)
@@ -238,6 +244,7 @@ function KiroProvider._get_default_model()
 end
 
 return {
+  BaseProvider = BaseProvider,
   OpenCodeProvider = OpenCodeProvider,
   ClaudeCodeProvider = ClaudeCodeProvider,
   CursorAgentProvider = CursorAgentProvider,

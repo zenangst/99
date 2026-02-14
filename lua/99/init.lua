@@ -43,6 +43,19 @@ end
 
 --- @alias _99.Cleanup fun(): nil
 
+--- @class _99.RequestEntry.Data.Tutorial
+--- @field type "tutorial"
+--- @field title string
+--- @field content string[]
+
+--- @class _99.RequestEntry.Data.Search
+--- @field type "search"
+
+--- @class _99.RequestEntry.Data.Visual
+--- @field type "visual"
+
+--- @alias _99.RequestEntry.Data _99.RequestEntry.Data.Search | _99.RequestEntry.Data.Tutorial | _99.RequestEntry.Data.Visual
+
 --- @class _99.RequestEntry
 --- @field id number
 --- @field operation string
@@ -51,6 +64,7 @@ end
 --- @field lnum number
 --- @field col number
 --- @field started_at number
+--- @field operation_data _99.RequestEntry.Data
 
 --- @class _99.ActiveRequest
 --- @field clean_up _99.Cleanup
@@ -69,6 +83,7 @@ end
 --- @field provider_override _99.Providers.BaseProvider?
 --- @field __active_requests table<number, _99.ActiveRequest>
 --- @field __view_log_idx number
+--- @field __tutorials _99.RequestEntry.Data.Tutorial[]
 --- @field __request_history _99.RequestEntry[]
 --- @field __request_by_id table<number, _99.RequestEntry>
 
@@ -85,6 +100,7 @@ local function create_99_state()
     provider_override = nil,
     auto_add_skills = false,
     __active_requests = {},
+    __tutorials = {},
     __view_log_idx = 1,
     __request_history = {},
     __request_by_id = {},
@@ -126,6 +142,7 @@ end
 --- @field __active_requests table<number, _99.ActiveRequest>
 --- @field __view_log_idx number
 --- @field __request_history _99.RequestEntry[]
+--- @field __tutorials _99.RequestEntry.Data.Tutorial[]
 --- @field __request_by_id table<number, _99.RequestEntry>
 --- @field __active_marks _99.Mark[]
 local _99_State = {}
@@ -177,6 +194,21 @@ function _99_State:finish_request(id, status)
   if entry then
     entry.status = status
   end
+end
+
+--- @param id number
+---@param data _99.RequestEntry.Data
+function _99_State:add_data(id, data)
+  local entry = self.__request_by_id[id]
+  if not entry then
+    return
+  end
+  local logger = Logger:set_id(id)
+  logger:assert(
+    entry.operation == data.type,
+    "the data type is not the same as the operation"
+  )
+  entry.operation_data = data
 end
 
 --- @param id number
@@ -249,6 +281,16 @@ function _99_State:remove_active_request(id)
   logger:assert(r, "there is no active request for id.  implementation broken")
   logger:debug("removing active request")
   self.__active_requests[id] = nil
+
+  local entry = self.__request_history[id]
+  if entry.operation == "tutorial" and entry.status == "success" then
+    local data = entry.operation_data
+    logger:assert(
+      data.type == "tutorial",
+      "data type tutorial expected for request tutorial"
+    )
+    table.insert(self.__tutorials, data)
+  end
 end
 
 local _99_state = _99_State.new()
