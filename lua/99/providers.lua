@@ -3,14 +3,6 @@
 --- @field on_stderr fun(line: string): nil
 --- @field on_complete fun(status: _99.Request.ResponseState, res: string): nil
 
---- @type _99.Providers.Observer
-local DevNullObserver = {
-  name = "DevNullObserver",
-  on_stdout = function() end,
-  on_stderr = function() end,
-  on_complete = function() end,
-}
-
 --- @param fn fun(...: any): nil
 --- @return fun(...: any): nil
 local function once(fn)
@@ -56,17 +48,15 @@ end
 
 --- @param query string
 --- @param request _99.Request
---- @param observer _99.Providers.Observer?
+--- @param observer _99.Providers.Observer
 function BaseProvider:make_request(query, request, observer)
   local logger = request.logger:set_area(self:_get_provider_name())
   logger:debug("make_request", "tmp_file", request.context.tmp_file)
 
-  observer = observer or DevNullObserver
   local once_complete = once(
     --- @param status "success" | "failed" | "cancelled"
     ---@param text string
     function(status, text)
-      print("setting status", status)
       request.state = status
       observer.on_complete(status, text)
     end

@@ -38,10 +38,7 @@ describe("request test", function()
     eq("requesting", request.state)
 
     p:resolve("success", "    return 'implemented!'")
-    test_utils.next_frame()
-
     assert.is_true(finished_called)
-    test_utils.next_frame()
 
     eq("success", request.state)
     eq("success", finished_status)

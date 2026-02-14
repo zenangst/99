@@ -47,7 +47,7 @@ function Request:_set_process(proc)
 end
 
 function Request:cancel()
-  if self.state == "finished" then
+  if self.state == "success" then
     return
   end
 
@@ -77,6 +77,29 @@ function Request:add_prompt_content(content)
   return self
 end
 
+--- @param r _99.Request
+--- @param obs _99.Providers.Observer | nil
+local function observer_from_request(r, obs)
+  return {
+    on_complete = function(status, res)
+      r.state = status
+      if obs then
+        obs.on_complete(status, res)
+      end
+    end,
+    on_stderr = function(line)
+      if obs then
+        obs.on_stderr(line)
+      end
+    end,
+    on_stdout = function(line)
+      if obs then
+        obs.on_stdout(line)
+      end
+    end,
+  }
+end
+
 --- @param observer _99.Providers.Observer?
 function Request:start(observer)
   self.logger:assert(
@@ -94,7 +117,7 @@ function Request:start(observer)
   local prompt = table.concat(self._content, "\n")
   self.context:save_prompt(prompt)
   self.logger:debug("start", "prompt", prompt)
-  self.provider:make_request(prompt, self, observer)
+  self.provider:make_request(prompt, self, observer_from_request(self, observer))
 end
 
 return Request

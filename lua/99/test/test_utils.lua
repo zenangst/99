@@ -23,7 +23,8 @@ M.created_files = {}
 
 --- @class _99.test.Provider : _99.Providers.BaseProvider
 --- @field request _99.test.ProviderRequest?
-local TestProvider = setmetatable({}, { __index = BaseProvider })
+local TestProvider = {}
+TestProvider.__index = TestProvider
 
 function TestProvider.new()
   return setmetatable({}, TestProvider)
@@ -48,6 +49,7 @@ end
 function TestProvider:resolve(status, result)
   assert(self.request, "you cannot call resolve until make_request is called")
   local obs = self.request.observer
+
   if obs then
     --- to match the behavior expected from the OpenCodeProvider
     if self.request.request:is_cancelled() then
