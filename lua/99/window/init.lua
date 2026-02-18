@@ -283,9 +283,13 @@ local function set_defaul_win_options(win, name)
 end
 
 --- @param win _99.window.Window
---- @param rules _99.Agents.Rules
+--- @param rules _99.Agents.Rules?
 --- @param group any
 local function highlight_rules_found(win, rules, group)
+  if rules == nil then
+    return
+  end
+
   local rule_nsid = vim.api.nvim_create_namespace("99.window.rules")
   local function check_and_highlight_rules()
     if not nvim_win_is_valid(win.win_id) then
@@ -352,7 +356,7 @@ end
 --- @field cb fun(success: boolean, result: string): nil
 --- @field on_load? fun(): nil
 --- @field content? string[]
---- @field rules _99.Agents.Rules
+--- @field rules? _99.Agents.Rules
 
 --- @param name string
 --- @param opts _99.window.CaptureInputOpts

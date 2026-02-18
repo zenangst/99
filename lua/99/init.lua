@@ -45,6 +45,7 @@ end
 
 --- @class _99.RequestEntry.Data.Search
 --- @field type "search"
+--- @field qfix_items _99.Search.Result[]
 
 --- @class _99.RequestEntry.Data.Visual
 --- @field type "visual"
@@ -397,15 +398,16 @@ function _99:rule_from_path(path)
 end
 
 --- @param opts? _99.ops.SearchOpts
+--- @return number
 function _99.search(opts)
   local o = process_opts(opts) --[[ @as _99.ops.SearchOpts ]]
   local context = get_context("search")
   if o.additional_prompt then
     ops.search(context, o)
-    return
   else
     capture_prompt(ops.search, "Search", context, o)
   end
+  return context.xid
 end
 
 --- @param opts _99.ops.Opts
@@ -473,21 +475,6 @@ end
 --- @field col number
 --- @field text string
 
---- @param entry _99.RequestEntry
---- @return _99.QFixEntry
-local function request_entry_to_qfix_item(entry)
-  local context = entry.context
-  local point = entry.point
-  local text = string.format("[%s] %s", entry.status, entry.context.operation)
-
-  return {
-    filename = context and context.full_path or "",
-    lnum = point and point.row or 0,
-    col = point and point.col or 0,
-    text = text,
-  }
-end
-
 function _99.stop_all_requests()
   for _, request in pairs(_99_state.__request_by_id) do
     if request.status == "requesting" then
@@ -503,12 +490,18 @@ function _99.clear_all_marks()
   _99_state.__active_marks = {}
 end
 
-function _99.previous_requests_to_qfix()
-  local items = {}
-  for _, entry in ipairs(_99_state.__request_history) do
-    table.insert(items, request_entry_to_qfix_item(entry))
-  end
-  vim.fn.setqflist({}, "r", { title = "99 Requests", items = items })
+--- @param xid number | nil
+function _99.qfix_search_results(xid)
+  --- @type _99.RequestEntry
+  local entry = _99_state.__request_by_id[xid]
+  assert(entry, "qfix_search_results could not find id: " .. xid)
+
+  local data = entry.operation_data
+  assert(data, "there must be data associated with request entry")
+  assert(data.type == "search", "the operation_data must be type search")
+
+  local items = data.qfix_items
+  vim.fn.setqflist({}, "r", { title = "99 Search Results", items = items })
   vim.cmd("copen")
 end
 
@@ -673,4 +666,7 @@ function _99.__debug()
 end
 
 _99.Providers = Providers
+_99.Extensions = {
+  Worker = require("99.extensions.work.worker"),
+}
 return _99
