@@ -4,10 +4,10 @@
 local function get_surrounding_context(range, n)
   local start_row, _ = range.start:to_vim()
   local end_row, _ = range.end_:to_vim()
-  -- nvim_buf_get_lines safely clamps out-of-bounds indexes
-  local from = start_row - n
-  local to = end_row + 1 + n                                              -- +1 because end_row is end-inclusive
-  local lines = vim.api.nvim_buf_get_lines(range.buffer, from, to, false) -- nvim_buf_get_lines is end-exclusive
+  local line_count = vim.api.nvim_buf_line_count(range.buffer)
+  local from = math.max(start_row - n, 0)
+  local to = math.min(end_row + 1 + n, line_count)
+  local lines = vim.api.nvim_buf_get_lines(range.buffer, from, to, false)
 
   return table.concat(lines, "\n")
 end
